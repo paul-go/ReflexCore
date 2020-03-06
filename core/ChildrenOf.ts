@@ -19,6 +19,9 @@ namespace Reflex.Core
 	
 	export namespace childrenOf
 	{
+		/** @internal */
+		declare const __dirname: string;
+		
 		export let enabled = typeof __dirname === "string";
 		
 		/**

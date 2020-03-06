@@ -6,6 +6,9 @@ namespace Reflex.Core
 	/** @internal */
 	declare const Deno: any;
 	
+	/** @internal */
+	declare const global: any;
+	
 	/**
 	 * 
 	 */
