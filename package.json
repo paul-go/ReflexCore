@@ -13,7 +13,6 @@
 	},
 	"scripts": {
 		"start": "http-server . -p 4349",
-		"build": "makets build",
-		"bundle": "makets bundle"
+		"bundle": "hush bundle"
 	}
 }

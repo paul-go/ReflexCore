@@ -1,4 +1,7 @@
 
+/**
+ * @internal
+ */
 const enum Const
 {
 	"",

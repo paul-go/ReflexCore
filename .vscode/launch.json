@@ -4,10 +4,10 @@
 		
 		// Configuration for Node.js-based projects
 		{
-			"name": "Debug Reflex ML Node",
+			"name": "Debug Reflex ML Snapshot",
 			"type": "node",
 			"request": "launch",
-			"program": "${workspaceRoot}/ReflexMLNode/build/reflex-ml-node.js",
+			"program": "${workspaceRoot}/ReflexMLSnapshot/build/reflex-ml-node.js",
 			"args": [
 				"./ReflexSS/core"
 			],
@@ -48,11 +48,11 @@
 			]
 		},
 		{
-			"name": "Debug Reflex ML Node Makets Script",
+			"name": "Debug Reflex ML Snapshot Makets Script",
 			"type": "node",
 			"request": "launch",
 			"program": "${env:HOME}/.npm-packages/bin/makets",
-			"cwd": "${workspaceFolder}/ReflexMLNode",
+			"cwd": "${workspaceFolder}/ReflexMLSnapshot",
 			"args": [
 				"publish"
 			]

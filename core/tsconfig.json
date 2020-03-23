@@ -6,5 +6,8 @@
 	"include": [
 		"../tsconst.ts",
 		"**/*.ts"
-	]
+	],
+	"bundle": {
+		"namespace": "Reflex"
+	}
 }
