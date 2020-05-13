@@ -14,15 +14,15 @@ function force<F extends Reflex.ArrowFunction>(): Reflex.StatelessForceParametri
  */
 function force(initialValue: boolean): Reflex.BooleanForce;
 /**
+ * Returns a StatelessForce object that remotely triggers some
+ * behavior when the internal object value is changed.
+ */
+function force<T extends Reflex.NonIterableObject>(initialValue: T): Reflex.StatefulForce<T>;
+/**
  * Returns an ArrayForce object that remotely triggers some behavior
  * when the array is modified.
  */
 function force<T>(backingArray: T[]): Reflex.ArrayForce<T>;
-/**
- * Returns a StatelessForce object that remotely triggers some
- * behavior when the internal object value is changed.
- */
-function force<T extends {}>(initialValue: T): Reflex.StatefulForce<T>;
 function force(val?: any)
 {
 	if (val === undefined || val === null)

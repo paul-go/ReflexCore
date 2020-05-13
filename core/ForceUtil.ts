@@ -36,6 +36,15 @@ namespace Reflex
 	export type ArrowFunction = (...args: any[]) => void;
 	
 	/**
+	 * A type that describes an object that is not an array.
+	 */
+	export interface NonIterableObject
+	{
+		[Symbol.iterator]?: never;
+		constructor: any;
+	};
+	
+	/**
 	 * A type that describes a force function with 1 or more parameters
 	 * that triggers the execution of any connected recurrent functions
 	 * when called.

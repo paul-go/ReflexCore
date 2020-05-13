@@ -50,12 +50,12 @@ namespace Reflex.Core
 		
 		/**
 		 * The below array is initialized to empty when the Locator instance
- 		 * is instantiated. This is because when locators are first instantiated,
- 		 * they refer to metas that are floating in limbo -- they're not attached
- 		 * to anything. Locator values only become relevant at the point when
- 		 * they are attached to some containing meta, because otherwise, it's
- 		 * not possible for the locator to refer to a meta that has "siblings", 
- 		 * which is the entire point of the Locator concept.
+		 * is instantiated. This is because when locators are first instantiated,
+		 * they refer to metas that are floating in limbo -- they're not attached
+		 * to anything. Locator values only become relevant at the point when
+		 * they are attached to some containing meta, because otherwise, it's
+		 * not possible for the locator to refer to a meta that has "siblings", 
+		 * which is the entire point of the Locator concept.
 		 */
 		private values: number[] = [];
 		
