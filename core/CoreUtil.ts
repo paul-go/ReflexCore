@@ -17,12 +17,34 @@ namespace Reflex.Core
 			containerMeta: ContainerMeta,
 			rawAtoms: unknown)
 		{
-			const atoms = Array.isArray(rawAtoms) ?
+			let lib: ILibrary | null = null;
+			
+			let atoms = Array.isArray(rawAtoms) ?
 				rawAtoms.slice() :
 				[rawAtoms];
 			
-			let lib: ILibrary | null = null;
+			const atomsPruned: any[] = [];
+			const pruneAtomsRecursive = (atoms: Iterable<any>) =>
+			{
+				for (let atom of atoms)
+				{
+					// Pass by ignorable values
+					if ((!atom && atom !== 0) ||
+						atom === true ||
+						atom === containerBranch)
+						break;
+					
+					if (this.isIterable(atom))
+						pruneAtomsRecursive(atom);
+					
+					else
+						atomsPruned.push(atom);
+				}
+			};
 			
+			pruneAtomsRecursive(atoms);
+			
+			/*
 			for (let i = -1; ++i < atoms.length;)
 			{
 				const atom = atoms[i];
@@ -47,11 +69,15 @@ namespace Reflex.Core
 					atoms.splice(i--, 1, ...Array.from(atom));
 			}
 			
+			if (atomsPruned.length !== atoms.length)
+				debugger;
+			*/
+			
 			const metas: Meta[] = [];
 			
-			for (let i = -1; ++i < atoms.length;)
+			for (let i = -1; ++i < atomsPruned.length;)
 			{
-				const atom = atoms[i];
+				const atom = atomsPruned[i];
 				const typeOf = typeof atom;
 				const existingMeta = BranchMeta.of(atom) || LeafMeta.of(atom);
 				
@@ -141,15 +167,30 @@ namespace Reflex.Core
 		 * Creates a temporary closure function for the
 		 * specified symbolic atom object.
 		 */
-		private createSymbolicClosure(atom: any)
+		private createSymbolicClosure(reflexAtom: any)
 		{
 			return (branch: IBranch, children: any[]) =>
 			{
-				const property = atom[Reflex.atom];
+				const property = reflexAtom[Reflex.atom];
 				return typeof property === "function" ?
-					property.call(atom, branch, children) :
+					property.call(reflexAtom, branch, children) :
 					property;
 			}
+		}
+		
+		/**
+		 * Returns whether the specified value is likely to be Iterable,
+		 * and not a string (which is technically iterable).
+		 */
+		isIterable(maybeIterable: any): maybeIterable is Iterable<unknown>
+		{
+			if (Array.isArray(maybeIterable))
+				return true; 
+			
+			if (typeof maybeIterable === "string")
+				return false;
+			
+			return this.hasSymbol && !!maybeIterable[Symbol.iterator];
 		}
 		
 		/**
