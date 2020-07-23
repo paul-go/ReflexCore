@@ -17,9 +17,16 @@ namespace Reflex.Core
 			containerMeta: ContainerMeta,
 			rawAtoms: unknown)
 		{
-			let lib: ILibrary | null = null;
+			let lib: ILibrary | null | undefined;
+			const getLib = () => 
+			{
+				if (lib === undefined)
+					return lib = RoutingLibrary.of(containerBranch);
+				
+				return lib;
+			};
 			
-			let atoms = Array.isArray(rawAtoms) ?
+			const atoms = Array.isArray(rawAtoms) ?
 				rawAtoms.slice() :
 				[rawAtoms];
 			
@@ -32,12 +39,10 @@ namespace Reflex.Core
 					if ((!atom && atom !== 0) ||
 						atom === true ||
 						atom === containerBranch)
-						break;
+						continue;
 					
-					if (this.isIterable(atom))
-						pruneAtomsRecursive(atom);
-					
-					else
+					this.isIterable(atom) ?
+						pruneAtomsRecursive(atom) :
 						atomsPruned.push(atom);
 				}
 			};
@@ -77,12 +82,11 @@ namespace Reflex.Core
 			
 			for (let i = -1; ++i < atomsPruned.length;)
 			{
-				const atom = atomsPruned[i];
+				let atom = atomsPruned[i];
 				const typeOf = typeof atom;
 				const existingMeta = BranchMeta.of(atom) || LeafMeta.of(atom);
 				
-				if (existingMeta &&
-					((lib = lib || RoutingLibrary.of(containerBranch)) === existingMeta.library))
+				if (existingMeta && getLib() === existingMeta.library)
 					metas.push(existingMeta);
 				
 				else if (atom instanceof Meta)
@@ -103,7 +107,14 @@ namespace Reflex.Core
 							atom));
 					}
 				}
-				else if (atom[Reflex.atom])
+				// Custom atoms need to be wrapped in a closure, rather than just
+				// being executed directly, because their values could be a getter that
+				// is intended to be executed at the time of being applied to a branch,
+				// rather than at the time of instantiation. Also, the ClosureMeta
+				// provides another opportunity to perform another translateAtoms(),
+				// in the case when more recursive iteration is required on the object
+				// acquired via the Reflex.atom symbol.
+				else if (this.hasReflexAtom(atom))
 					metas.push(new ClosureMeta(this.createSymbolicClosure(atom)));
 				
 				else if (typeOf === "function")
@@ -134,11 +145,24 @@ namespace Reflex.Core
 						else metas.push(new AttributeMeta(k, v));
 					}
 				}
-				
-				// This error occurs when something was passed as a atom 
-				// to a branch function, and neither the Reflex core, or any of
-				// the connected Reflexive libraries know what to do with it.
-				else throw new Error("Unidentified flying object.");
+				else
+				{
+					if (!lib)
+						lib = RoutingLibrary.of(containerBranch);
+					
+					// Last resort -- check the supporting library to see if it 
+					// understands this atom as a branch.
+					if (lib && lib.isKnownBranch(atom))
+					{
+						metas.push(new BranchMeta(atom, [], lib));
+						continue;
+					}
+					
+					// This error occurs when something was passed as a atom 
+					// to a branch function, and neither the Reflex core, or any of
+					// the connected Reflexive libraries know what to do with it.
+					throw new Error("Unidentified flying object.");
+				}
 			}
 			
 			return metas;
@@ -180,10 +204,16 @@ namespace Reflex.Core
 		
 		/**
 		 * Returns whether the specified value is likely to be Iterable,
-		 * and not a string (which is technically iterable).
+		 * and not a string (which is technically iterable), and not some
+		 * other object that has the Reflex.atom symbol (because this
+		 * would be a user-defined object that happens to have the
+		 * Symbol.iterator defined).
 		 */
-		isIterable(maybeIterable: any): maybeIterable is Iterable<unknown>
+		private isIterable(maybeIterable: any): maybeIterable is Iterable<unknown>
 		{
+			if (this.hasReflexAtom(maybeIterable))
+				return false;
+			
 			if (Array.isArray(maybeIterable))
 				return true; 
 			
@@ -196,7 +226,7 @@ namespace Reflex.Core
 		/**
 		 * 
 		 */
-		isAsyncIterable(o: any): o is AsyncIterable<any>
+		private isAsyncIterable(o: any): o is AsyncIterable<any>
 		{
 			if (this.hasSymbol && o && typeof o === "object")
 				if (o[Symbol.asyncIterator])
@@ -209,7 +239,13 @@ namespace Reflex.Core
 		}
 		
 		/** */
-		get hasSymbol()
+		private hasReflexAtom(value: any)
+		{
+			return !!value && typeof value === "object" && Reflex.atom in value;
+		}
+		
+		/** */
+		private get hasSymbol()
 		{
 			return typeof Symbol === "function";
 		}
@@ -218,6 +254,10 @@ namespace Reflex.Core
 		 * Applies the specified metas to the specified branch, and returns
 		 * the last applied branch or leaf object, which can be used for
 		 * future references.
+		 * 
+		 * This method mutates the "childMetas" argument, by executing
+		 * any ClosureMeta instances it may have, and replacing them
+		 * with their returned values.
 		 */
 		applyMetas(
 			containingBranch: IBranch,
@@ -230,7 +270,6 @@ namespace Reflex.Core
 				throw new Error("");
 			
 			const lib = RoutingLibrary.this;
-			childMetas = childMetas.slice();
 			
 			for (let i = -1; ++i < childMetas.length;)
 			{
@@ -260,11 +299,14 @@ namespace Reflex.Core
 							containingBranchMeta,
 							closureReturn);
 						
-						if (metasReturned.length < 1)
-							continue;
-						
-						childMetas.splice(i--, 1, ...metasReturned);
+						// Splice the ClosureMeta out of the array, splice in the
+						// returned metas, and then move backward 1 index,
+						// to make the containing loop behave as expected.
+						childMetas.splice(i, 1, ...metasReturned);
+						i--;
 					}
+					
+					continue;
 				}
 				
 				meta.locator.setContainer(containerMeta.locator);

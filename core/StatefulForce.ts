@@ -12,7 +12,7 @@ namespace Reflex
 		}
 		
 		/** 
-		 * Gets or sets the value of the force.
+		 * Gets or sets the current value of the force.
 		 */
 		get value()
 		{
@@ -152,4 +152,32 @@ namespace Reflex
 			this.set(!this.value);
 		}
 	}
+	
+	type Mutables = "set" | "flip" | "value";
+	
+	/**
+	 * A class that wraps an externally readonly boolean
+	 * value, but whose changes can be observed.
+	 */
+	export type ReadonlyBooleanForce = 
+		Omit<BooleanForce, Mutables> & 
+		{ 
+			/**
+			 * Gets the current value of this force.
+			 */
+			readonly value: boolean;
+		};
+	
+	/**
+	 * A class that wraps an externally readonly value, 
+	 * but whose changes can be observed.
+	 */
+	export type ReadonlyStatefulForce<T> = 
+		Omit<StatefulForce<T>, Mutables> &
+		{
+			/**
+			 * Gets the current value of this force.
+			 */
+			readonly value: T;
+		};
 }

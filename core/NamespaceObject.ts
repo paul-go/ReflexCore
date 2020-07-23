@@ -196,6 +196,8 @@ namespace Reflex.Core
 					
 					if (library.getDynamicNonBranch)
 						return library.getDynamicNonBranch(key);
+					
+					throw new Error("Member not available: " + key);
 				},
 				set(target: Function, p: any, value: any)
 				{
@@ -237,13 +239,31 @@ namespace Reflex.Core
 	const namespaceObjects = new WeakMap<object, ILibrary>();
 	
 	/**
-	 * Returns whether the specified function or method
-	 * refers to a branch function that was created by a
-	 * reflexive library.
+	 * 
 	 */
-	export function isBranchFunction(fn: Function)
+	export function importBranch(branch: IBranch)
 	{
-		return branchFns.has(fn);
+		return toBranchFunction(name, (...atoms: Atom[]) =>
+			returnBranch(branch, atoms));
+	}
+	
+	/**
+	 * 
+	 */
+	function createBranchFn(constructBranchFn: () => IBranch, name: string)
+	{
+		return toBranchFunction(name, (...atoms: Atom[]) =>
+			returnBranch(constructBranchFn(), atoms));
+	}
+	
+	/**
+	 * 
+	 */
+	function createParameticBranchFn(branchFn: (...args: any[]) => IBranch, name: string)
+	{
+		return (...constructBranchArgs: any[]) =>
+			toBranchFunction(name, (...atoms: Atom[]) =>
+				returnBranch(branchFn(constructBranchArgs), atoms));
 	}
 	
 	/** */
@@ -262,23 +282,18 @@ namespace Reflex.Core
 		return fn;
 	}
 	
+	/**
+	 * Returns whether the specified function or method
+	 * refers to a branch function that was created by a
+	 * reflexive library.
+	 */
+	export function isBranchFunction(fn: Function)
+	{
+		return branchFns.has(fn);
+	}
+	
 	/** Stores the set of all branch functions created by all reflexive libraries. */
 	const branchFns = new WeakSet<Function>();
-	
-	/**
-	 * 
-	 */
-	const createBranchFn = (constructBranchFn: () => IBranch, name: string) =>
-		toBranchFunction(name, (...atoms: Atom[]) =>
-			returnBranch(constructBranchFn(), atoms));
-	
-	/**
-	 * 
-	 */
-	const createParameticBranchFn = (branchFn: (...args: any[]) => IBranch, name: string) =>
-		(...constructBranchArgs: any[]) =>
-			toBranchFunction(name, (...atoms: Atom[]) =>
-				returnBranch(branchFn(constructBranchArgs), atoms));
 	
 	/**
 	 * Returns the IBranch back to the user, while providing an
@@ -333,7 +348,7 @@ namespace Reflex.Core
 				
 				if (val instanceof StatefulForce)
 				{
-					out.push(new Recurrent(
+					const rec = new Recurrent(
 						RecurrentKind.on,
 						val,
 						now =>
@@ -343,7 +358,9 @@ namespace Reflex.Core
 								new LeafMeta(result, library);
 							
 							return result;
-						}).run());
+						}).run();
+					
+					out.push(rec);
 				}
 				else
 				{
