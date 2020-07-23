@@ -1,0 +1,58 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.git": true,
+			"**/.DS_Store": true,
+			"**/bundle": true,
+			"**/node_modules": true,
+			"**/package-lock.json": true
+		},
+		"search.exclude": {
+			"**/.git": true,
+			"**/.DS_Store": true,
+			"**/build": true,
+			"**/bundle": true,
+			"**/node_modules": true,
+			"**/package-lock.json": true
+		}
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Compile Reflex Core",
+				"type": "shell",
+				"command": "tsc",
+				"args": [
+					"--build",
+					"--watch"
+				],
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"problemMatcher": [
+					"$tsc"
+				],
+				"runOptions": {
+					"runOn": "folderOpen"
+				}
+			},
+			{
+				"label": "Set Active Cover Function",
+				"type": "shell",
+				"command": "npx",
+				"args": [
+					"moduless",
+					"set",
+					"${file}:${lineNumber}"
+				],
+				"problemMatcher": []
+			}
+		]
+	}
+}
