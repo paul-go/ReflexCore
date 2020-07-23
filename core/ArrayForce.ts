@@ -245,8 +245,6 @@ namespace Reflex
 		{
 			return this.positions.length;
 		}
-		
-		/** */
 		set length(i: number)
 		{
 			this.splice(i, this.positions.length - i);
@@ -317,17 +315,18 @@ namespace Reflex
 		}
 		
 		/** 
-		 * Returns snapshot of this ArrayForce as a plain JavaScript array.
+		 * Returns the inner (non-force) JavaScript array containing
+		 * the items in the ArrayForce.
 		 */
-		snapshot()
+		valueOf()
 		{
-			return this.positions.map(x => this.getRoot(x));
+			return this.positions.map(num => this.getRoot(num));
 		}
 		
 		/** */
 		toString(): string
 		{
-			return JSON.stringify(this.snapshot());
+			return JSON.stringify(this.valueOf());
 		}
 		
 		/** */
@@ -341,7 +340,7 @@ namespace Reflex
 		concat(...items: (T | ConcatArray<T>)[]): T[];
 		concat(...items: any[])
 		{
-			const array = ArrayForce.create<T>(this.snapshot() as T[]);
+			const array = ArrayForce.create<T>(this.valueOf() as T[]);
 			array.push(...items);
 			return array.proxy();
 		}
@@ -349,7 +348,7 @@ namespace Reflex
 		/** */
 		join(separator?: string): string
 		{
-			return this.snapshot().join(separator);
+			return this.valueOf().join(separator);
 		}
 		
 		/** */
@@ -374,10 +373,16 @@ namespace Reflex
 			array.sortFn = compareFn;
 			
 			for (const fo of forces)
-				Core.ForceUtil.attachForce(
+			{
+				const forceToAttach = 
 					fo instanceof StatefulForce ?
-						fo.changed : fo, array.executeSort
-				);
+						fo.changed :
+						fo;
+				
+				Core.ForceUtil.attachForce(
+					forceToAttach, 
+					() => array.executeSort);
+			}
 			
 			array.insertRef(0, ...this.positions);
 			return array.proxy() as this;
@@ -435,7 +440,7 @@ namespace Reflex
 		{
 			const fo = ArrayForce.create(
 				this.positions
-					.map(x => this.getRoot(x))
+					.map(num => this.getRoot(num))
 					.map((value, index) => callbackFn.call(thisArg || this, value, index, this))
 			);
 			
@@ -615,63 +620,63 @@ namespace Reflex
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][][][][][][], depth: 7): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][][][][][], depth: 6): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][][][][], depth: 5): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][][][], depth: 4): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][][], depth: 3): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][][], depth: 2): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[][], depth?: 1): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: U[], depth: 0): ArrayForce<U>;
 		/**
 		 * Returns a new ArrayForce with all nested array elements concatenated into it recursively,
 		 * up to the specified depth. If no depth is provided, flat method defaults to the depth of 1.
-		 *
+		 * 
 		 * @param depth The maximum recursion depth
 		 */
 		flat<U>(this: any[], depth?: number): ArrayForce<U>;
@@ -683,9 +688,9 @@ namespace Reflex
 			const levelDown = (source: ArrayForce<T>) =>
 			{
 				const fo = ArrayForce
-					.create(source.snapshot()
+					.create(source.valueOf()
 					.flatMap(v => v instanceof ArrayForce ?
-						v.snapshot() : 
+						v.valueOf() : 
 						v));
 				
 				const numberMap = new Map<number, number[]>();
@@ -733,7 +738,7 @@ namespace Reflex
 		/**
 		 * 
 		 */
-		distinct(keyFn: (x: any, index: number) => any)
+		distinct(keyFn: (value: any, index: number) => any)
 		{
 			const keyMap = new Map<any, number>();
 			const fo = ArrayForce.create<T>([]);
@@ -851,7 +856,7 @@ namespace Reflex
 		}
 		
 		/** 
-		 * Returns absolute index in root
+		 * Returns absolute index in root.
 		 */
 		absoluteIndex(index: number)
 		{
@@ -859,7 +864,7 @@ namespace Reflex
 		}
 		
 		/** 
-		 * Returns item from root with given absolute index
+		 * Returns item from root with given absolute index.
 		 */
 		getAbsolute(index: number)
 		{
@@ -867,11 +872,11 @@ namespace Reflex
 		}
 		
 		/**
-		 * Diff with given array and apply changes
+		 * Diff with given array and apply changes.
 		 */
 		reset(state: T[])
 		{
-			const diff = this.snapshot()
+			const diff = this.valueOf()
 				.map((v, i) => v !== state[i] ? i : undefined)
 				.filter((v): v is number => v !== undefined)
 				.reverse();
