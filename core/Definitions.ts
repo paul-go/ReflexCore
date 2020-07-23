@@ -18,7 +18,7 @@ namespace Reflex
 	 * a type, in order to make it a valid Reflex atom.
 	 */
 	export declare const atom: unique symbol;
-	(<any>Reflex)["atom"] = typeof Symbol === "function" ?
+	(Reflex as any).atom = typeof Symbol === "function" ?
 		Symbol("Reflex.atom") :
 		"Reflex.atom";
 	

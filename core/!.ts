@@ -8,3 +8,6 @@
 /// <reference path="ForceUtil.ts" />
 /// <reference path="StatefulForce.ts" />
 /// <reference path="ArrayForce.ts" />
+
+//@ts-ignore
+typeof module === "object" && (module.exports = { Reflex, force });
